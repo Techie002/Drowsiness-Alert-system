@@ -1,0 +1,279 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #f1f1f1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #1e1e2f;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 184, 148, 0.3);
+    padding: 30px;
+    max-width: 850px;
+    width: 90%;
+    text-align: center;
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    color: #00cec9;
+    text-shadow: 0 0 5px #00cec9;
+}
+
+.status-bar {
+    margin-bottom: 20px;
+}
+
+.status {
+    font-size: 1.2em;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+}
+
+.status.idle {
+    background-color: #636e72;
+}
+
+.status.monitoring {
+    background-color: #00b894;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+.status.stopped {
+    background-color: #d63031;
+}
+
+.video-frame {
+    margin: 20px auto;
+    border: 5px solid #00b894;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 184, 148, 0.6);
+}
+
+.video-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+.camera-buttons {
+    display: inline-block;
+    margin: 10px;
+}
+
+button {
+    padding: 12px 24px;
+    font-size: 1em;
+    margin: 10px;
+    background-color: #0984e3;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(9, 132, 227, 0.5);
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+button:hover:not(:disabled) {
+    background-color: #74b9ff;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(116, 185, 255, 0.8);
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.camera-btn {
+    background-color: #6c5ce7;
+    box-shadow: 0 0 10px rgba(108, 92, 231, 0.5);
+}
+
+.camera-btn.active {
+    background-color: #00b894;
+    box-shadow: 0 0 15px rgba(0, 184, 148, 0.8);
+    transform: scale(1.02);
+    border: 2px solid #fff;
+}
+
+.camera-btn.active:hover {
+    background-color: #00a884;
+}
+
+.reconnect-btn {
+    background-color: #e17055;
+    box-shadow: 0 0 10px rgba(225, 112, 85, 0.5);
+}
+
+.reconnect-btn:hover {
+    background-color: #d63031;
+}
+
+#stopBtn {
+    background-color: #d63031;
+    box-shadow: 0 0 10px rgba(214, 48, 49, 0.5);
+}
+
+#stopBtn:hover {
+    background-color: #ff4757;
+}
+
+footer {
+    margin-top: 30px;
+    font-size: 0.9em;
+    color: #b2bec3;
+}
+
+footer p {
+    margin: 8px 0;
+}
+
+footer p:first-child {
+    margin-top: 0;
+}
+
+footer p:last-child {
+    margin-bottom: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e2f;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00b894;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00cec9;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header h1 {
+        font-size: 1.5em;
+    }
+    
+    button {
+        padding: 8px 16px;
+        font-size: 0.85em;
+        margin: 5px;
+    }
+    
+    .status {
+        font-size: 0.9em;
+        padding: 6px 12px;
+    }
+    
+    .video-frame {
+        border-width: 3px;
+    }
+    
+    footer {
+        font-size: 0.75em;
+    }
+}
+
+/* Loading animation for video */
+.video-frame img[src*="video_feed"] {
+    animation: fadeInVideo 0.5s ease;
+}
+
+@keyframes fadeInVideo {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Tooltip styling */
+button[title] {
+    position: relative;
+}
+
+button[title]:hover:after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2d3436;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+/* Focus outline for accessibility */
+button:focus {
+    outline: 2px solid #00cec9;
+    outline-offset: 2px;
+}
+
+/* Status bar responsive text */
+@media (max-width: 480px) {
+    .status {
+        font-size: 0.8em;
+        padding: 4px 8px;
+    }
+    
+    button {
+        padding: 6px 12px;
+        font-size: 0.75em;
+    }
+    
+    .camera-buttons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .camera-btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+}

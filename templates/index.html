@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drowsiness Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        let currentCamera = 'integrated';
+        let switching = false;
+        
+        async function startCamera() {
+            // Check available cameras first
+            await checkCameras();
+            
+            // Set video feed with cache buster
+            const videoFeed = document.getElementById("videoFeed");
+            videoFeed.src = "/video_feed?" + new Date().getTime();
+            
+            document.getElementById("allowBtn").style.display = "none";
+            document.getElementById("cameraControls").style.display = "block";
+            document.getElementById("stopBtn").style.display = "inline-block";
+            document.getElementById("status").innerText = "Monitoring...";
+            document.getElementById("status").className = "status monitoring";
+        }
+
+        async function checkCameras() {
+            try {
+                const response = await fetch("/check_cameras");
+                const data = await response.json();
+                
+                const integratedBtn = document.getElementById("integratedBtn");
+                const externalBtn = document.getElementById("externalBtn");
+                
+                if (!data.integrated) {
+                    integratedBtn.disabled = true;
+                    integratedBtn.style.opacity = "0.5";
+                    integratedBtn.title = "Integrated camera not detected";
+                } else {
+                    integratedBtn.disabled = false;
+                    integratedBtn.style.opacity = "1";
+                }
+                
+                if (!data.external) {
+                    externalBtn.disabled = true;
+                    externalBtn.style.opacity = "0.5";
+                    externalBtn.title = "External camera not detected. Please connect a USB camera and click 'Reconnect'";
+                } else {
+                    externalBtn.disabled = false;
+                    externalBtn.style.opacity = "1";
+                }
+                
+                currentCamera = data.current === 0 ? 'integrated' : 'external';
+                updateActiveButton();
+            } catch (error) {
+                console.error("Error checking cameras:", error);
+            }
+        }
+
+        function stopAlarm() {
+            fetch("/stop_alarm", { method: "POST" })
+                .then(() => {
+                    document.getElementById("status").innerText = "Alarm stopped";
+                    document.getElementById("status").className = "status stopped";
+                    setTimeout(() => {
+                        if (document.getElementById("status").innerText === "Alarm stopped") {
+                            document.getElementById("status").innerText = "Monitoring...";
+                            document.getElementById("status").className = "status monitoring";
+                        }
+                    }, 3000);
+                })
+                .catch(error => console.error("Error stopping alarm:", error));
+        }
+
+        async function switchCamera(type) {
+            if (switching) {
+                console.log("Already switching...");
+                return;
+            }
+            
+            if (type === currentCamera) {
+                console.log("Already using this camera");
+                return;
+            }
+            
+            switching = true;
+            
+            // Show switching indicator
+            document.getElementById("status").innerText = "🔄 Switching camera...";
+            document.getElementById("status").className = "status idle";
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch("/switch_camera", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ camera: type })
+                });
+                
+                const data = await response.json();
+                const switchTime = Date.now() - startTime;
+                console.log(`Camera switched in ${switchTime}ms`);
+                
+                if (data.status === "success") {
+                    currentCamera = type;
+                    updateActiveButton();
+                    
+                    // The video feed automatically updates without reloading the src
+                    // Just show success message
+                    document.getElementById("status").innerText = `✅ Switched to ${type === 'integrated' ? 'Integrated' : 'External'} camera (${switchTime}ms)`;
+                    document.getElementById("status").className = "status monitoring";
+                    
+                    setTimeout(() => {
+                        if (document.getElementById("status").innerText.includes("Switched to")) {
+                            document.getElementById("status").innerText = "Monitoring...";
+                        }
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || "Switch failed");
+                }
+            } catch (error) {
+                console.error("Error switching camera:", error);
+                document.getElementById("status").innerText = "❌ Failed to switch camera";
+                document.getElementById("status").className = "status stopped";
+                setTimeout(() => {
+                    if (document.getElementById("status").innerText === "Failed to switch camera") {
+                        document.getElementById("status").innerText = "Monitoring...";
+                        document.getElementById("status").className = "status monitoring";
+                    }
+                }, 3000);
+            } finally {
+                setTimeout(() => {
+                    switching = false;
+                }, 500);
+            }
+        }
+        
+        async function reconnectCameras() {
+            document.getElementById("status").innerText = "🔄 Reconnecting cameras...";
+            document.getElementById("status").className = "status idle";
+            
+            try {
+                const response = await fetch("/reconnect_cameras", { method: "POST" });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    await checkCameras();
+                    document.getElementById("status").innerText = "✅ Cameras reconnected";
+                    setTimeout(() => {
+                        if (document.getElementById("status").innerText === "Cameras reconnected") {
+                            document.getElementById("status").innerText = "Monitoring...";
+                            document.getElementById("status").className = "status monitoring";
+                        }
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error("Error reconnecting:", error);
+                document.getElementById("status").innerText = "❌ Failed to reconnect";
+            }
+        }
+        
+        function updateActiveButton() {
+            const integratedBtn = document.getElementById("integratedBtn");
+            const externalBtn = document.getElementById("externalBtn");
+            
+            if (currentCamera === 'integrated') {
+                integratedBtn.classList.add("active");
+                externalBtn.classList.remove("active");
+            } else {
+                externalBtn.classList.add("active");
+                integratedBtn.classList.remove("active");
+            }
+        }
+        
+        // Periodically check camera status (every 10 seconds)
+        setInterval(checkCameras, 10000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Driver Drowsiness Detection</h1>
+        </header>
+        <div class="status-bar">
+            <span id="status" class="status idle">ML based Tracking system</span>
+        </div>
+        <div class="video-frame">
+            <img id="videoFeed" width="720">
+        </div>
+        <div class="controls">
+            <button id="allowBtn" onclick="startCamera()">🎥 Start Camera</button>
+            
+            <div id="cameraControls" style="display:none;">
+                <div class="camera-buttons">
+                    <button id="integratedBtn" class="camera-btn" onclick="switchCamera('integrated')">
+                        📷 Integrated Camera
+                    </button>
+                    <button id="externalBtn" class="camera-btn" onclick="switchCamera('external')">
+                        🔌 External Camera
+                    </button>
+                </div>
+                <button onclick="reconnectCameras()" class="reconnect-btn">🔄 Reconnect Cameras</button>
+            </div>
+            
+            <button id="stopBtn" style="display:none;" onclick="stopAlarm()">🔕 STOP ALARM</button>
+        </div>
+        <footer>
+            <p>🔒 Privacy assured: Camera feed is processed locally and never stored.</p>
+            <p>📌 <strong>Camera Guide:</strong> Integrated = Laptop/Webcam (Index 0) | External = USB Camera (Index 1)</p>
+            <p>⚡ <strong>Fast Switching:</strong> Both cameras are pre-initialized for instant switching!</p>
+            <p>💡 <strong>Tip:</strong> If external camera is not detected, connect it and click "Reconnect Cameras"</p>
+        </footer>
+    </div>
+</body>
+</html>
